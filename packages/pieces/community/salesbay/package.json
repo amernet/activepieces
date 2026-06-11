@@ -4,7 +4,8 @@
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.lib.json && cp package.json dist/",
+    "build": "tsc -p tsconfig.lib.json && node scripts/make-dist-manifest.js",
+    "pack": "npm run build && cd dist && npm pack --pack-destination ..",
     "lint": "eslint 'src/**/*.ts'"
   },
   "dependencies": {
