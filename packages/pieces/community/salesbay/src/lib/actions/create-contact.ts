@@ -10,6 +10,7 @@ export const createContact = createAction({
   description: 'Create a contact in a Salesbay Lead Finder list.',
   props: {
     leads_finder_id: Property.Dropdown({
+      auth: salesbayAuth,
       displayName: 'Lead Finder (list)',
       description: 'The list the contact belongs to.',
       required: true,

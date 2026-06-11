@@ -11,6 +11,7 @@ export const enrollSegmentInWorkflow = createAction({
     'Enroll every contact matching a Smart Segment into an active drip workflow (deduplicated — already-enrolled contacts are skipped).',
   props: {
     workflow_id: Property.Dropdown({
+      auth: salesbayAuth,
       displayName: 'Drip Workflow (active)',
       required: true,
       refreshers: [],
@@ -22,6 +23,7 @@ export const enrollSegmentInWorkflow = createAction({
       },
     }),
     segment_id: Property.Dropdown({
+      auth: salesbayAuth,
       displayName: 'Smart Segment',
       required: true,
       refreshers: [],
