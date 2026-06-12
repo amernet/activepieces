@@ -116,7 +116,10 @@ const setupPortalTokenBridge = (): void => {
 };
 
 const portalEmbedActive = isPortalEmbed();
-if (portalEmbedActive) {
+// The auto-login bridge runs whenever we're framed (both the chrome-less
+// portal embed and the full-UI admin embed) — the message listener only
+// accepts tokens from parent windows on salesbay.ai https origins.
+if (window.self !== window.top) {
   setupPortalTokenBridge();
 }
 
