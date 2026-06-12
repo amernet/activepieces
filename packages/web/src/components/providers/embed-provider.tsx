@@ -40,6 +40,41 @@ const defaultState: EmbeddingState = {
   hidePageHeader: false,
 };
 
+/**
+ * Salesbay portal embed: when the app is loaded inside the portal's iframe
+ * with ?portalEmbed=1, boot directly into the embedded UI (memory router,
+ * no side nav) without the EE embedding SDK — users authenticate with their
+ * own Activepieces session. The flag is persisted in sessionStorage because
+ * the memory router drops the query string right after boot.
+ */
+const PORTAL_EMBED_KEY = 'sb-portal-embed';
+
+const isPortalEmbed = (): boolean => {
+  try {
+    if (
+      new URLSearchParams(window.location.search).get('portalEmbed') === '1'
+    ) {
+      sessionStorage.setItem(PORTAL_EMBED_KEY, '1');
+    }
+    return (
+      window.self !== window.top &&
+      sessionStorage.getItem(PORTAL_EMBED_KEY) === '1'
+    );
+  } catch {
+    return false;
+  }
+};
+
+const initialState: EmbeddingState = isPortalEmbed()
+  ? {
+      ...defaultState,
+      isEmbedded: true,
+      hideSideNav: true,
+      useDarkBackground: false,
+      homeButtonIcon: 'back',
+    }
+  : defaultState;
+
 const EmbeddingContext = createContext<{
   embedState: EmbeddingState;
   setEmbedState: React.Dispatch<React.SetStateAction<EmbeddingState>>;
@@ -55,7 +90,7 @@ type EmbeddingProviderProps = {
 };
 
 const EmbeddingProvider = ({ children }: EmbeddingProviderProps) => {
-  const [state, setState] = useState<EmbeddingState>(defaultState);
+  const [state, setState] = useState<EmbeddingState>(initialState);
 
   return (
     <EmbeddingContext.Provider
