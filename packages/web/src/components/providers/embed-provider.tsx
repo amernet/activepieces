@@ -65,7 +65,58 @@ const isPortalEmbed = (): boolean => {
   }
 };
 
-const initialState: EmbeddingState = isPortalEmbed()
+/**
+ * Portal auto-login: if the embed boots without a valid session, announce
+ * SB_EMBED_READY to the parent portal; it mints a session token (signed with
+ * this instance's own JWT secret, server-side) and posts it back as
+ * SB_PORTAL_TOKEN. Store it and reload once — the user never sees the login
+ * page. Only messages from the parent window on a salesbay.ai https origin
+ * are accepted.
+ */
+const PORTAL_TOKEN_GUARD_KEY = 'sb-portal-token-applied';
+
+const hasValidToken = (): boolean => {
+  try {
+    const token = window.localStorage.getItem('token');
+    if (!token) return false;
+    const payload = JSON.parse(
+      atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')),
+    ) as { exp?: number };
+    return !!payload.exp && payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+};
+
+const setupPortalTokenBridge = (): void => {
+  try {
+    if (hasValidToken()) return;
+    window.addEventListener('message', (event: MessageEvent) => {
+      if (event.source !== window.parent) return;
+      if (!/^https:\/\/([a-z0-9-]+\.)*salesbay\.ai$/.test(event.origin)) {
+        return;
+      }
+      const data = event.data as { type?: string; token?: string };
+      if (data?.type !== 'SB_PORTAL_TOKEN' || !data.token) return;
+      if (sessionStorage.getItem(PORTAL_TOKEN_GUARD_KEY) === data.token) {
+        return; // this token was already applied — don't reload-loop
+      }
+      window.localStorage.setItem('token', data.token);
+      sessionStorage.setItem(PORTAL_TOKEN_GUARD_KEY, data.token);
+      window.location.reload();
+    });
+    window.parent.postMessage({ type: 'SB_EMBED_READY' }, '*');
+  } catch {
+    // storage unavailable — fall back to the normal login page
+  }
+};
+
+const portalEmbedActive = isPortalEmbed();
+if (portalEmbedActive) {
+  setupPortalTokenBridge();
+}
+
+const initialState: EmbeddingState = portalEmbedActive
   ? {
       ...defaultState,
       isEmbedded: true,
