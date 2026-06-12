@@ -51,10 +51,14 @@ const PORTAL_EMBED_KEY = 'sb-portal-embed';
 
 const isPortalEmbed = (): boolean => {
   try {
-    if (
-      new URLSearchParams(window.location.search).get('portalEmbed') === '1'
-    ) {
+    const param = new URLSearchParams(window.location.search).get(
+      'portalEmbed',
+    );
+    if (param === '1') {
       sessionStorage.setItem(PORTAL_EMBED_KEY, '1');
+    } else if (param === '0') {
+      // explicit opt-out — e.g. the portal's admin page embeds the full UI
+      sessionStorage.removeItem(PORTAL_EMBED_KEY);
     }
     return (
       window.self !== window.top &&
